@@ -472,6 +472,11 @@ def draw_face(expr, lx=0, ly=0, bp=1.0):
             wy = 33 + i * 4
             oled.hline(10, wy, 16, 1)
             oled.hline(102, wy, 16, 1)
+        if tongue_out and expr not in (EXPR_SLEEPY, EXPR_EATING, EXPR_SURPRISED):
+            ty = my + 6 if expr in (EXPR_HAPPY, EXPR_EXCITED) else my + 5
+            oled.fill_rect(mx - 1, ty, 3, 4, 1)
+            oled.pixel(mx - 1, ty + 3, 0)
+            oled.pixel(mx + 1, ty + 3, 0)
     elif blush or sk == 1:
         for dy in range(-1, 2):
             for dx in range(0, 5):
@@ -586,6 +591,9 @@ next_gracinha = random.randint(300000, 600000)
 blink_timer = time.ticks_ms() + random.randint(3000, 7000)
 is_blinking = False
 blink_start = 0
+tongue_out = False
+tongue_timer = time.ticks_ms() + random.randint(12000, 30000)
+tongue_start = 0
 look_x = 0
 look_y = 0
 
@@ -1775,6 +1783,17 @@ while True:
             else:
                 is_blinking = False
                 blink_timer = now + random.randint(3000, 7000)
+
+        # ---- TONGUE (GATO) ----
+        if CFG["skin"] == 3 and pet_state in ("idle", "talking", "reacting"):
+            if not tongue_out and time.ticks_diff(now, tongue_timer) >= 0:
+                tongue_out = True
+                tongue_start = now
+            if tongue_out and time.ticks_diff(now, tongue_start) > 2000:
+                tongue_out = False
+                tongue_timer = now + random.randint(15000, 45000)
+        elif tongue_out:
+            tongue_out = False
 
         # ---- SLEEP MODE DISPLAY ----
         if pet_state in ("sleeping", "drowsy"):
