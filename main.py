@@ -32,7 +32,7 @@ gc.collect()
 # ============================================================
 CFG = {"som": True, "vol": 1, "noturno": "auto", "hr_dormir": 22,
        "hr_acordar": 8, "brilho": 1, "mic_reage": True,
-       "neo_efeitos": True, "tz": -3, "humor": 4}
+       "neo_efeitos": True, "tz": -3, "humor": 4, "skin": 0}
 VOL = (1000, 5000, 15000)
 BRILHO = (8, 20, 50)
 NOT_MODES = ("auto", "ligado", "desligado")
@@ -366,15 +366,30 @@ def draw_eyes(cx_l, cx_r, cy, r, pr, expr, lx, ly, bp):
             oled.hline(ecx - r, cy, r * 2, 1)
             oled.hline(ecx - r, cy - 1, r * 2, 1)
         else:
-            fill_circle(ecx, cy, r, 1)
-            fill_circle(ecx + plx, cy + ply, pr, 0)
-            bx = ecx + plx - pr // 2 - 1
-            by = cy + ply - pr // 2 - 1
-            oled.pixel(bx, by, 1)
-            oled.pixel(bx + 1, by, 1)
-            oled.pixel(bx, by + 1, 1)
-            oled.pixel(bx + 1, by + 1, 1)
-            oled.pixel(ecx + plx + pr // 2, cy + ply + pr // 2 - 1, 1)
+            sk = CFG["skin"]
+            if sk == 2:
+                oled.fill_rect(ecx - r, cy - r, r * 2, r * 2, 1)
+                oled.fill_rect(ecx + plx - pr, cy + ply - pr, pr * 2, pr * 2, 0)
+                oled.fill_rect(ecx + plx - pr + 1, cy + ply - pr + 1, 2, 2, 1)
+            elif sk == 3:
+                fill_circle(ecx, cy, r, 1)
+                pw = max(2, pr // 2)
+                oled.fill_rect(ecx + plx - pw // 2, cy + ply - pr, pw, pr * 2, 0)
+                oled.pixel(ecx + plx - pw, cy + ply - pr + 1, 1)
+            else:
+                fill_circle(ecx, cy, r, 1)
+                apr = pr + 1 if sk == 1 else pr
+                fill_circle(ecx + plx, cy + ply, apr, 0)
+                bx = ecx + plx - pr // 2 - 1
+                by = cy + ply - pr // 2 - 1
+                oled.pixel(bx, by, 1)
+                oled.pixel(bx + 1, by, 1)
+                oled.pixel(bx, by + 1, 1)
+                oled.pixel(bx + 1, by + 1, 1)
+                if sk == 1:
+                    oled.pixel(bx + 2, by, 1)
+                    oled.pixel(bx, by + 2, 1)
+                oled.pixel(ecx + plx + pr // 2, cy + ply + pr // 2 - 1, 1)
 
 def draw_face(expr, lx=0, ly=0, bp=1.0):
     oled.fill(0)
@@ -396,28 +411,68 @@ def draw_face(expr, lx=0, ly=0, bp=1.0):
     elif expr == EXPR_SLEEPY:
         R = 12
     draw_eyes(38, 90, 24, R, PR, expr, lx, ly, bp)
+    sk = CFG["skin"]
     mx, my = 64, 50
     if expr in (EXPR_HAPPY, EXPR_EXCITED, EXPR_EATING):
-        for i in range(-10, 11):
-            t = i / 10
-            cy_m = int(5 * (1 - t * t))
-            oled.pixel(mx + i, my + 5 - cy_m, 1)
+        if sk == 2:
+            oled.fill_rect(mx - 8, my + 2, 16, 3, 1)
+            oled.fill_rect(mx - 6, my + 5, 12, 2, 1)
+        elif sk == 3:
+            for i in range(-8, 9):
+                t = i / 8
+                oled.pixel(mx + i, my + 4 - int(3 * (1 - t * t)), 1)
+        else:
+            w = 12 if sk == 1 else 10
+            for i in range(-w, w + 1):
+                t = i / w
+                cy_m = int(5 * (1 - t * t))
+                oled.pixel(mx + i, my + 5 - cy_m, 1)
+            if sk == 1:
+                fill_circle(mx, my + 4, 4, 1)
         if expr == EXPR_EATING:
             fill_circle(mx, my + 5, 3, 1)
     elif expr in (EXPR_SAD, EXPR_SCARED):
-        for i in range(-7, 8):
-            t = i / 7
-            cy_m = int(3 * (1 - t * t))
-            oled.pixel(mx + i, my - 2 + cy_m, 1)
+        if sk == 2:
+            oled.fill_rect(mx - 6, my - 1, 12, 2, 1)
+        else:
+            for i in range(-7, 8):
+                t = i / 7
+                cy_m = int(3 * (1 - t * t))
+                oled.pixel(mx + i, my - 2 + cy_m, 1)
     elif expr == EXPR_SURPRISED:
-        circle(mx, my + 2, 5, 1)
+        if sk == 2:
+            oled.rect(mx - 4, my - 1, 8, 8, 1)
+        else:
+            circle(mx, my + 2, 5, 1)
     elif expr == EXPR_SLEEPY:
-        circle(mx, my + 2, 4, 1)
+        if sk == 2:
+            oled.fill_rect(mx - 3, my, 6, 2, 1)
+        else:
+            circle(mx, my + 2, 4, 1)
         oled.text("z", 108, 3, 1)
         oled.text("Z", 116, 0, 1)
     else:
-        oled.hline(mx - 4, my, 8, 1)
-    if blush:
+        if sk == 1:
+            for i in (-3, -1, 1, 3):
+                oled.pixel(mx + i, my + (1 if abs(i) == 1 else 0), 1)
+            oled.pixel(mx, my + 2, 1)
+        elif sk == 2:
+            oled.hline(mx - 5, my, 4, 1)
+            oled.hline(mx + 1, my, 4, 1)
+        elif sk == 3:
+            oled.pixel(mx, my, 1)
+            oled.pixel(mx + 1, my + 1, 1)
+            oled.pixel(mx, my + 2, 1)
+            oled.pixel(mx + 1, my + 3, 1)
+            oled.pixel(mx, my + 4, 1)
+        else:
+            oled.hline(mx - 4, my, 8, 1)
+    if sk == 3:
+        for i in range(3):
+            wy = 33 + i * 4
+            oled.hline(10, wy, 16, 1)
+            oled.hline(102, wy, 16, 1)
+    elif blush or sk == 1:
         for dy in range(-1, 2):
             for dx in range(0, 5):
                 oled.pixel(17 + dx * 2, 36 + dy, 1)
@@ -1060,7 +1115,7 @@ gc.collect()
 # SECTION 11: UI SCREENS
 # ============================================================
 MENU = ("Alimentar", "Carinho", "Brincar", "Exercicio", "Snake",
-        "Reacao", "Jukebox", "Humor", "Status", "Achar Me!", "Config", "Dormir")
+        "Reacao", "Jukebox", "Humor", "Skin", "Status", "Achar Me!", "Config", "Dormir")
 
 def show_menu(sel):
     oled.fill(0)
@@ -1335,6 +1390,43 @@ def set_humor():
                 return
             time.sleep_ms(30)
 
+SKIN_N = ("Classico", "Kawaii", "Robo", "Gato")
+
+def set_skin():
+    sel = CFG["skin"]
+    old = sel
+    while True:
+        CFG["skin"] = sel
+        draw_face(EXPR_HAPPY, 0, 0, 1.0)
+        oled.fill_rect(0, 0, 128, 11, 0)
+        oled.text("< " + SKIN_N[sel] + " >", max(0, 64 - (len(SKIN_N[sel]) + 4) * 4), 1, 1)
+        oled.hline(0, 10, 128, 1)
+        oled.fill_rect(0, 55, 128, 9, 0)
+        oled.text("B=OK A=Volta", 15, 56, 1)
+        oled.show()
+        while True:
+            d = get_joy_dir(*read_joy())
+            if d == "right" or d == "down":
+                sel = (sel + 1) % 4
+                beep(800, 15)
+                time.sleep_ms(150)
+                break
+            if d == "left" or d == "up":
+                sel = (sel - 1) % 4
+                beep(800, 15)
+                time.sleep_ms(150)
+                break
+            if btn_b.value() == 0:
+                beep(1000, 20)
+                CFG["skin"] = sel
+                save_state()
+                return
+            if btn_a.value() == 0:
+                beep(600, 15)
+                CFG["skin"] = old
+                return
+            time.sleep_ms(30)
+
 def find_me():
     nb = BRILHO[CFG["brilho"]]
     for i in range(16):
@@ -1536,12 +1628,14 @@ while True:
                     pet_state = "talking"
                     react_end = time.ticks_ms() + 3000
                 elif menu_sel == 8:
-                    show_status()
+                    set_skin()
                 elif menu_sel == 9:
-                    find_me()
+                    show_status()
                 elif menu_sel == 10:
-                    show_config()
+                    find_me()
                 elif menu_sel == 11:
+                    show_config()
+                elif menu_sel == 12:
                     draw_face_msg(EXPR_SLEEPY, "Boa noite..", 0, 0, 1.0)
                     play_melody(M_SLEEP)
                     for b in (0.8, 0.5, 0.2):
