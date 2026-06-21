@@ -72,8 +72,13 @@ gc.collect()
 # ============================================================
 # SECTION 3: WIFI + NTP
 # ============================================================
-WIFI_SSID = "SUA_REDE_WIFI"
-WIFI_PASS = "SUA_SENHA_WIFI"
+# Credenciais ficam em secrets.py (fora do Git). Copie secrets.example.py
+# para secrets.py no dispositivo e preencha com a rede real.
+try:
+    from secrets import WIFI_SSID, WIFI_PASS
+except ImportError:
+    WIFI_SSID = "SUA_REDE_WIFI"
+    WIFI_PASS = "SUA_SENHA_WIFI"
 wlan = None
 wifi_ok = False
 tem_relogio = False

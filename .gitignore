@@ -1,3 +1,4 @@
 bitdoglab-docs/
 *.mpy
 mochi.py
+secrets.py
